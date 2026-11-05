@@ -232,9 +232,11 @@ impl IpOperations for super::start_struct::Start {
         }
 
         // 读取测速结果
+        let mut fresh_csv = None;
         if result_csv_path.exists() {
             let content = fs::read_to_string(&result_csv_path)?;
             fs::remove_file(&result_csv_path)?;
+            fresh_csv = Some(content.clone());
 
             ips = content
                 .lines()
@@ -251,6 +253,11 @@ impl IpOperations for super::start_struct::Start {
                 })
                 .take(if num == 0 { usize::MAX } else { num as usize })
                 .collect();
+        }
+
+        // Publish only a fresh nonempty result for CSV consumers and push notifications.
+        if !ips.is_empty() {
+            fs::write(super::utils::get_result_csv_path(cf_command), fresh_csv.as_deref().unwrap_or_default())?;
         }
 
         // 处理DNS记录
