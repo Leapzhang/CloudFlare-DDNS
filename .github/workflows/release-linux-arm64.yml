@@ -1,0 +1,47 @@
+name: Build DDNS Linux ARM64
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'src/**'
+      - '.github/workflows/release-linux-arm64.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release-linux-arm64:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-unknown-linux-musl
+
+      - uses: mlugg/setup-zig@v2
+        with:
+          version: master
+
+      - name: Test and build
+        run: |
+          cargo test
+          cargo install --locked cargo-zigbuild
+          cargo zigbuild --release --target aarch64-unknown-linux-musl
+          install -Dm755 target/aarch64-unknown-linux-musl/release/CFRS dist/CFRS
+
+      - name: Package release archive
+        run: tar -czf CFRS_linux_arm64.tar.gz -C dist CFRS
+
+      - name: Publish main-latest release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: main-latest
+          name: CFRS 最新版本
+          target_commitish: ${{ github.sha }}
+          files: CFRS_linux_arm64.tar.gz
+          overwrite_files: true
