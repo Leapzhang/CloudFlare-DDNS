@@ -56,7 +56,7 @@ impl IpOperations for super::start_struct::Start {
     fn fetch_and_filter_ips(
         &self,
         url: &str,
-        max_count: u32,
+        _max_count: u32,
         ip_type: &str,
         output_file: Option<&str>,
     ) -> Result<Vec<String>> {
@@ -87,8 +87,8 @@ impl IpOperations for super::start_struct::Start {
                     None
                 }
             })
-            .take(max_count as usize)
             .collect();
+        if filtered_ips.is_empty() { anyhow::bail!("候选 IP 列表为空"); }
 
         // 如果指定了输出文件，则将结果保存到文件
         if let Some(file_path) = output_file {
@@ -111,9 +111,9 @@ impl IpOperations for super::start_struct::Start {
 
         while attempt <= max_retries {
             let output = Command::new("curl")
-                .arg("-s")
+                .arg("-fsSL")
                 .arg("--max-time")
-                .arg("3")
+                .arg("30")
                 .arg(url)
                 .output();
 
@@ -213,7 +213,9 @@ impl IpOperations for super::start_struct::Start {
         // 打印将要执行的命令
         println!("[执行] {} {}\n", cfst_path, cf_command);
 
-        // 执行测速
+        // Each run uses a fresh output file, so stale results cannot update DNS.
+        let nonce = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH)?.as_nanos();
+        let result_csv_path = std::env::temp_dir().join(format!("cfrs-{}-{}.csv", std::process::id(), nonce));
         let mut cmd = Command::new(cfst_path);
         cmd.args(cf_command.split_whitespace());
 
@@ -223,15 +225,16 @@ impl IpOperations for super::start_struct::Start {
             cmd.arg("-p").arg(&num_str);
         }
 
+        cmd.arg("-o").arg(&result_csv_path);
         let status = cmd.status()?;
         if !status.success() {
             return Err(anyhow::anyhow!("{} 执行失败", crate::CLOUDFLAREST_RUST));
         }
 
         // 读取测速结果
-        let result_csv_path = super::utils::get_result_csv_path(cf_command);
-        if std::path::Path::new(&result_csv_path).exists() {
+        if result_csv_path.exists() {
             let content = fs::read_to_string(&result_csv_path)?;
+            fs::remove_file(&result_csv_path)?;
 
             ips = content
                 .lines()
