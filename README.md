@@ -2,20 +2,20 @@
 
 # 🚀 CloudFlare-DDNS
 
-使用 [CloudflareST-Rust](https://github.com/GuangYu-yu/CloudflareST-Rust) 获取优选 IP 并 DDNS 至 Cloudflare
+使用 [CloudflareST-Rust](https://github.com/Leapzhang/CloudflareST-Rust) 获取优选 IP 并 DDNS 至 Cloudflare
 
 <p align="center">
   <img src="https://img.shields.io/badge/rustc-latest-orange?style=flat-square&logo=rust" alt="Rust Version">
-  <a href="https://github.com/GuangYu-yu/CloudFlare-DDNS/releases">
+  <a href="https://github.com/Leapzhang/CloudFlare-DDNS/releases">
     <img src="https://img.shields.io/github/downloads/GuangYu-yu/CloudFlare-DDNS/total?style=flat-square&logo=github" alt="GitHub Downloads">
   </a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/GuangYu-yu/CloudFlare-DDNS">
+  <a href="https://github.com/Leapzhang/CloudFlare-DDNS">
     <img src="https://img.shields.io/github/stars/GuangYu-yu/CloudFlare-DDNS?style=flat-square&label=Star&color=00ADD8&logo=github" alt="GitHub Stars">
   </a>
-  <a href="https://github.com/GuangYu-yu/CloudFlare-DDNS/forks">
+  <a href="https://github.com/Leapzhang/CloudFlare-DDNS/forks">
     <img src="https://img.shields.io/github/forks/GuangYu-yu/CloudFlare-DDNS?style=flat-square&label=Fork&color=00ADD8&logo=github" alt="GitHub Forks">
   </a>
 </p>
@@ -41,26 +41,27 @@
 | 📊 **数据管理** | • 支持GitHub提交（需要令牌）<br> |
 | ⚙️ **灵活配置** | • YAML配置文件<br>• 多账户支持<br>• 可直接运行 ./CFRS [解析组]<br> |
 
-<img width="751" height="930" alt="演示图" src="https://raw.githubusercontent.com/GuangYu-yu/CloudFlare-DDNS/refs/heads/main/演示.png" />
+<img width="751" height="930" alt="演示图" src="https://raw.githubusercontent.com/Leapzhang/CloudFlare-DDNS/refs/heads/main/演示.png" />
 
 ## 🔧 安装方式
 
-### CloudflareST-Rust + CFRS
-```bash
-curl -ksSL https://github.com/GuangYu-yu/CloudFlare-DDNS/releases/download/setup/cfopw.sh | bash
+以下命令适用于 OpenWrt Linux ARM64（`uname -m` 为 `aarch64` 或 `arm64`）。它直接下载本 fork 发布的 CFRS 和与其兼容的 CloudflareST-Rust：
+
+```sh
+set -e
+case "$(uname -m)" in
+  aarch64|arm64) ARCH=arm64 ;;
+  *) echo "仅提供 Linux ARM64 安装包；当前架构：$(uname -m)" >&2; exit 1 ;;
+esac
+
+curl -fL "https://github.com/Leapzhang/CloudFlare-DDNS/releases/download/main-latest/CFRS_linux_$ARCH.tar.gz" | tar -xz
+curl -fL "https://github.com/Leapzhang/CloudflareST-Rust/releases/download/main-latest/CloudflareST-Rust_linux_$ARCH.tar.gz" | tar -xz
+chmod 0755 CFRS CloudflareST-Rust
 ```
 
-或者
+两个程序必须放在同一目录。随后执行 `./CFRS` 进行配置，或用 `./CFRS <解析组名称>` 执行指定任务。
 
-```bash
-bash -c 'ARCH=$( [ "$(uname -m)" = x86_64 ] && echo amd64 || echo arm64 ); curl -fsSL https://github.com/GuangYu-yu/CloudFlare-DDNS/releases/download/setup/setup.sh | bash -s -- GuangYu-yu CloudflareST-Rust main-latest CloudflareST-Rust_linux_$ARCH.tar.gz CloudflareST-Rust GuangYu-yu CloudFlare-DDNS main-latest CFRS_linux_$ARCH.tar.gz CFRS'
-```
-
-### CFRS
-
-```bash
-bash -c 'ARCH=$( [ "$(uname -m)" = x86_64 ] && echo amd64 || echo arm64 ); curl -fsSL https://github.com/GuangYu-yu/CloudFlare-DDNS/releases/download/setup/setup.sh | bash -s -- GuangYu-yu CloudFlare-DDNS main-latest CFRS_linux_$ARCH.tar.gz CFRS'
-```
+> 构建工作流完成并发布 `main-latest` 后，上述下载地址才会可用。
 
 ## 📄 配置文件结构 (`cf.yaml`)
 
